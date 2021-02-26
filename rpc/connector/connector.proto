@@ -37,6 +37,10 @@ service Connector {
   // Requires having already called Connect.
   rpc List(ListRequest) returns (DeploymentInfoSnapshot);
 
+  // Returns a stream of messages to display to the user.  Does NOT
+  // require having called anything else first.
+  rpc UserNotifications(google.protobuf.Empty) returns (stream Notification);
+
   // Quits (terminates) the connector process.
   rpc Quit(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
@@ -166,4 +170,8 @@ message InterceptResult {
 
   // The environment of the app
   map<string,string> environment = 4;
+}
+
+message Notification {
+  string message = 1;
 }
