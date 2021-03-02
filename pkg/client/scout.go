@@ -11,8 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/datawire/ambassador/pkg/metriton"
-	"github.com/telepresenceio/telepresence/v2/pkg/client/cache"
-	"github.com/telepresenceio/telepresence/v2/pkg/filelocation"
+	//"github.com/telepresenceio/telepresence/v2/pkg/client/cache"
 )
 
 // Scout is a Metriton reported
@@ -180,16 +179,16 @@ func (s *Scout) Report(ctx context.Context, action string, meta ...ScoutMeta) er
 		"action": action,
 		"index":  s.index,
 	}
-	userInfo, err := cache.LoadUserInfoFromUserCache(ctx)
-	if err == nil && userInfo.Id != "" {
-		metadata["user_id"] = userInfo.Id
-		metadata["account_id"] = userInfo.AccountId
-	}
+	// userInfo, err := cache.LoadUserInfoFromUserCache(ctx)
+	// if err == nil && userInfo.Id != "" {
+	// 	metadata["user_id"] = userInfo.Id
+	// 	metadata["account_id"] = userInfo.AccountId
+	// }
 	for _, metaItem := range meta {
 		metadata[metaItem.Key] = metaItem.Value
 	}
 
-	_, err = s.Reporter.Report(ctx, metadata)
+	_, err := s.Reporter.Report(ctx, metadata)
 	if err != nil {
 		return errors.Wrap(err, "scout report")
 	}

@@ -11,11 +11,11 @@ import (
 
 	"github.com/kballard/go-shellquote"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc"
 	empty "google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/datawire/dlib/dgroup"
 	"github.com/telepresenceio/telepresence/rpc/v2/connector"
-	"github.com/telepresenceio/telepresence/rpc/v2/manager"
 	"github.com/telepresenceio/telepresence/v2/pkg/client"
 	"github.com/telepresenceio/telepresence/v2/pkg/filelocation"
 )
@@ -44,7 +44,16 @@ func launchConnector() error {
 // given function with that connection.  It streams to stdout any messages that the connector wants
 // us to display to the user (which WithConnector listens for via the UserNotifications gRPC call).
 // WithConnector does NOT make the "Connect" gRPC call or any other gRPC call but UserNotifications.
-func WithConnector(ctx context.Context, fn func(context.Context, connector.ConnectorClient, manager.ManagerClient) error) error {
+//
+// Nested calls to WithConnector will reuse the outer connection.
+func WithConnector(ctx context.Context, fn func(context.Context, connector.ConnectorClient) error) error {
+	type connectorConnCtxKey struct{}
+	if untyped := ctx.Value(connectorConnCtxKey{}); untyped != nil {
+		conn := untyped.(*grpc.ClientConn)
+		connectorClient := connector.NewConnectorClient(conn)
+		return fn(ctx, connectorClient)
+	}
+
 	if !client.SocketExists(client.ConnectorSocketName) {
 		if err := launchConnector(); err != nil {
 			return errors.Wrap(err, "failed to launch the connector service")
@@ -61,8 +70,8 @@ func WithConnector(ctx context.Context, fn func(context.Context, connector.Conne
 		return err
 	}
 	defer conn.Close()
+	ctx = context.WithValue(ctx, connectorConnCtxKey{}, conn)
 	connectorClient := connector.NewConnectorClient(conn)
-	managerClient := manager.NewManagerClient(conn)
 
 	grp := dgroup.NewGroup(ctx, dgroup.GroupConfig{
 		ShutdownOnNonError: true,
@@ -85,7 +94,7 @@ func WithConnector(ctx context.Context, fn func(context.Context, connector.Conne
 		}
 	})
 	grp.Go("main", func(ctx context.Context) error {
-		return fn(ctx, connectorClient, managerClient)
+		return fn(ctx, connectorClient)
 	})
 
 	return grp.Wait()

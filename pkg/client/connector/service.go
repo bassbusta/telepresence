@@ -23,7 +23,7 @@ import (
 	"github.com/telepresenceio/telepresence/rpc/v2/daemon"
 	"github.com/telepresenceio/telepresence/rpc/v2/manager"
 	"github.com/telepresenceio/telepresence/v2/pkg/client"
-	"github.com/telepresenceio/telepresence/v2/pkg/client/cache"
+	"github.com/telepresenceio/telepresence/v2/pkg/client/connector/internal/auth"
 	"github.com/telepresenceio/telepresence/v2/pkg/client/connector/internal/broadcastqueue"
 	"github.com/telepresenceio/telepresence/v2/pkg/client/logging"
 	"github.com/telepresenceio/telepresence/v2/pkg/filelocation"
@@ -225,6 +225,27 @@ func (s *service) UserNotifications(_ *empty.Empty, stream rpc.Connector_UserNot
 	}
 
 	return nil
+}
+
+func (s *service) Login(ctx context.Context, _ *empty.Empty) (*rpc.LoginResult, error) {
+	ctx = s.callCtx(ctx, "Login")
+	err := auth.EnsureLoggedIn(ctx, &s.userNotifications)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil // TODO
+}
+
+func (s *service) Logout(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
+	return nil, nil // TODO
+}
+
+func (s *service) GetUserInfo(ctx context.Context, _ *empty.Empty) (*rpc.UserInfo, error) {
+	return nil, nil // TODO
+}
+
+func (s *service) GetToken(ctx context.Context, _ *empty.Empty) (*rpc.TokenData, error) {
+	return nil, nil // TODO
 }
 
 func (s *service) Quit(_ context.Context, _ *empty.Empty) (*empty.Empty, error) {

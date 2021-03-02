@@ -140,6 +140,18 @@ func (cs *connectorState) isConnected() bool {
 	return cs.connectorConn != nil
 }
 
+func WithConnector(ctx context.Context, func(context.Context, connector.ConnectorClient, manager.ManagerClient) error) error {
+	err := start(client.GetExe(), []string{"connector-foreground"}, false, nil, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to launch the connector service")
+	}
+
+	if err = client.WaitUntilSocketAppears("connector", client.ConnectorSocketName, 10*time.Second); err != nil {
+		logDir, _ := filelocation.AppUserLogDir(cs.cmd.Context())
+		return false, fmt.Errorf("connector service did not start (see %q for more info)", filepath.Join(logDir, "connector.log"))
+	}
+}
+
 // connect opens the client connection to the daemon.
 func (cs *connectorState) connect() (err error) {
 	if cs.connectorConn, err = client.DialSocket(cs.cmd.Context(), client.ConnectorSocketName); err == nil {

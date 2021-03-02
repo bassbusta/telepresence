@@ -22,7 +22,6 @@ import (
 	"github.com/telepresenceio/telepresence/rpc/v2/connector"
 	"github.com/telepresenceio/telepresence/rpc/v2/manager"
 	"github.com/telepresenceio/telepresence/v2/pkg/client"
-	"github.com/telepresenceio/telepresence/v2/pkg/client/auth"
 	"github.com/telepresenceio/telepresence/v2/pkg/client/cache"
 	"github.com/telepresenceio/telepresence/v2/pkg/client/cli/extensions"
 )
@@ -131,7 +130,7 @@ func (ii *interceptInfo) intercept(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if ii.previewEnabled || extRequiresLogin {
-		if err := auth.EnsureLoggedIn(cmd); err != nil {
+		if _, err := EnsureLoggedIn(cmd.Context()); err != nil {
 			return err
 		}
 	}

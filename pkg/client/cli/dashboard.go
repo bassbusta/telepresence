@@ -6,8 +6,8 @@ import (
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 
+	"github.com/telepresenceio/telepresence/rpc/v2/connector"
 	"github.com/telepresenceio/telepresence/v2/pkg/client"
-	"github.com/telepresenceio/telepresence/v2/pkg/client/auth"
 	"github.com/telepresenceio/telepresence/v2/pkg/client/cache"
 )
 
@@ -23,24 +23,20 @@ func dashboardCommand() *cobra.Command {
 				return err
 			}
 
-			// Login unless already logged in.
-			if token, _ := cache.LoadTokenFromUserCache(cmd.Context()); token == nil {
-				l := auth.NewLoginExecutor(
-					env.LoginAuthURL,
-					env.LoginTokenURL,
-					env.LoginClientID,
-					env.LoginCompletionURL,
-					env.UserInfoURL,
-					cache.SaveTokenToUserCache,
-					cache.SaveUserInfoToUserCache,
-					browser.OpenURL,
-					client.NewScout(cmd.Context(), "cli"),
-				)
-				err = l.LoginFlow(cmd)
-			} else {
-				// The LoginFlow actually takes the user to the dashboard. Hence the else here.
-				err = browser.OpenURL(fmt.Sprintf("https://%s/cloud/preview", env.SystemAHost))
+			// Ensure we're logged in
+			userinfo, err := EnsureLoggedIn(cmd.Context())
+			if err != nil {
+				return err
 			}
-			return err
+
+			if true /* TODO */ {
+				// The LoginFlow actually takes the user to the dashboard. Hence the else here.
+				err := browser.OpenURL(fmt.Sprintf("https://%s/cloud/preview", env.SystemAHost))
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
 		}}
 }

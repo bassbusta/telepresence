@@ -21,8 +21,8 @@ import (
 	"github.com/datawire/ambassador/pkg/metriton"
 	"github.com/datawire/dlib/dlog"
 	"github.com/telepresenceio/telepresence/v2/pkg/client"
-	"github.com/telepresenceio/telepresence/v2/pkg/client/auth"
-	"github.com/telepresenceio/telepresence/v2/pkg/client/cache"
+	"github.com/telepresenceio/telepresence/v2/pkg/client/cli"
+	"github.com/telepresenceio/telepresence/v2/pkg/client/connector/internal/auth"
 	"github.com/telepresenceio/telepresence/v2/pkg/filelocation"
 )
 
@@ -37,11 +37,11 @@ func (m *MockSaveTokenWrapper) SaveToken(_ context.Context, token *oauth2.Token)
 }
 
 type MockSaveUserInfoWrapper struct {
-	CallArguments []*cache.UserInfo
+	CallArguments []*auth.UserInfo
 	Err           error
 }
 
-func (m *MockSaveUserInfoWrapper) SaveUserInfo(_ context.Context, userInfo *cache.UserInfo) error {
+func (m *MockSaveUserInfoWrapper) SaveUserInfo(_ context.Context, userInfo *auth.UserInfo) error {
 	m.CallArguments = append(m.CallArguments, userInfo)
 	return m.Err
 }
@@ -60,7 +60,7 @@ type MockOauth2Server struct {
 	Server                 *http.Server
 	TokenRequestFormValues []url.Values
 	TokenResponseCode      int
-	UserInfo               *cache.UserInfo
+	UserInfo               *auth.UserInfo
 }
 
 func newMockOauth2Server(t *testing.T) *MockOauth2Server {
@@ -79,7 +79,7 @@ func newMockOauth2Server(t *testing.T) *MockOauth2Server {
 		}
 	}()
 	oauth2Server := &MockOauth2Server{Server: server, TokenResponseCode: http.StatusOK}
-	oauth2Server.UserInfo = &cache.UserInfo{
+	oauth2Server.UserInfo = &auth.UserInfo{
 		Id:               "mock-user-id",
 		Name:             "mock-user-name",
 		AvatarUrl:        "mock-user-avatar-url",
@@ -162,7 +162,7 @@ func TestLoginFlow(t *testing.T) {
 	setupWithCacheFuncs := func(
 		t *testing.T,
 		saveTokenFunc func(context.Context, *oauth2.Token) error,
-		saveUserInfoFunc func(context.Context, *cache.UserInfo) error,
+		saveUserInfoFunc func(context.Context, *auth.UserInfo) error,
 	) *fixture {
 		mockSaveTokenWrapper := &MockSaveTokenWrapper{}
 		saveToken := saveTokenFunc
@@ -380,7 +380,7 @@ func TestLoginFlow(t *testing.T) {
 	t.Run("will remove token and user info from user cache dir when logging out", func(t *testing.T) {
 		// given
 		ctx := dlog.NewTestContext(t, false)
-		f := setupWithCacheFuncs(t, cache.SaveTokenToUserCache, cache.SaveUserInfoToUserCache)
+		f := setupWithCacheFuncs(t, auth.SaveTokenToUserCache, auth.SaveUserInfoToUserCache)
 		defer f.MockOauth2Server.TearDown(t)
 		errs := make(chan error)
 
@@ -406,19 +406,19 @@ func TestLoginFlow(t *testing.T) {
 
 		// then
 		require.NoError(t, err, "no error running login flow")
-		token, err := cache.LoadTokenFromUserCache(ctx)
+		token, err := auth.LoadTokenFromUserCache(ctx)
 		require.NoError(t, err, "no error reading token")
 		require.NotNil(t, token)
-		userInfo, err := cache.LoadUserInfoFromUserCache(ctx)
+		userInfo, err := auth.LoadUserInfoFromUserCache(ctx)
 		require.NoError(t, err, "no error reading user info")
 		require.NotNil(t, userInfo)
-		err = auth.LogoutCommand().ExecuteContext(ctx)
+		err = cli.LogoutCommand().ExecuteContext(ctx)
 		require.NoError(t, err, "no error executing logout")
-		_, err = cache.LoadTokenFromUserCache(ctx)
+		_, err = auth.LoadTokenFromUserCache(ctx)
 		require.Error(t, err, "error reading token")
-		_, err = cache.LoadUserInfoFromUserCache(ctx)
+		_, err = auth.LoadUserInfoFromUserCache(ctx)
 		require.Error(t, err, "error reading user info")
-		err = auth.LogoutCommand().ExecuteContext(ctx)
+		err = cli.LogoutCommand().ExecuteContext(ctx)
 		require.Error(t, err, "error executing logout when not logged in")
 	})
 }

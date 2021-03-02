@@ -134,14 +134,6 @@ func (tm *trafficManager) run(c context.Context) error {
 	}, 2*time.Second, 6*time.Second)
 }
 
-func (tm *trafficManager) bearerToken(ctx context.Context) string {
-	token, err := cache.LoadTokenFromUserCache(ctx)
-	if err != nil {
-		return ""
-	}
-	return token.AccessToken
-}
-
 func (tm *trafficManager) initGrpc(c context.Context, portsIf interface{}) (err error) {
 	ports := portsIf.([]string)
 	sshPort, _ := strconv.Atoi(ports[0])

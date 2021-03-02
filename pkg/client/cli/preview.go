@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/telepresenceio/telepresence/rpc/v2/manager"
-	"github.com/telepresenceio/telepresence/v2/pkg/client/auth"
 )
 
 // addPreviewFlags mutates 'flags', adding flags to it such that the flags set the appropriate
@@ -32,7 +31,7 @@ func previewCommand() *cobra.Command {
 
 		Short: "Create a preview domain for an existing intercept",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := auth.EnsureLoggedIn(cmd); err != nil {
+			if _, err := EnsureLoggedIn(cmd.Context()); err != nil {
 				return err
 			}
 			si := &sessionInfo{cmd: cmd}

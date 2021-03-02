@@ -41,6 +41,14 @@ service Connector {
   // require having called anything else first.
   rpc UserNotifications(google.protobuf.Empty) returns (stream Notification);
 
+  rpc Login(google.protobuf.Empty) returns (LoginResult);
+
+  rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+  rpc GetUserInfo(google.protobuf.Empty) returns (UserInfo);
+
+  rpc GetToken(google.protobuf.Empty) returns (TokenData);
+
   // Quits (terminates) the connector process.
   rpc Quit(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
@@ -174,4 +182,24 @@ message InterceptResult {
 
 message Notification {
   string message = 1;
+}
+
+message LoginResult {
+  enum Code {
+    UNSPECIFIED = 0;
+    OLD_LOGIN_REUSED = 1; // success; already logged in
+    NEW_LOGIN_SUCCEEDED = 2; // success
+    // There is no failure code; a gRPC error code is returned instead.
+  }
+  Code code = 1;
+}
+
+message UserInfo {
+  string name = 1;
+  string id = 2;
+  string account_id = 3;
+}
+
+message TokenData {
+  string access_token = 1;
 }
